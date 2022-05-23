@@ -2,17 +2,6 @@ use std::collections::HashMap;
 
 mod parse;
 
-#[derive(Debug, Hash, PartialEq, Eq)]
-enum HeaderName {
-    Accept,
-    Connection,
-    ContentLength,
-    Host,
-    Referer,
-    UserAgent,
-    Other(String),
-}
-
 #[derive(Debug)]
 pub struct RequestHeader<'a> {
     request_line: RequestLine<'a>,
@@ -35,3 +24,19 @@ enum Method {
 
 #[derive(Debug)]
 pub struct Header<'a>(HeaderName, &'a str);
+
+#[derive(Debug, Hash, PartialEq, Eq)]
+enum HeaderName {
+    Accept,
+    Connection,
+    ContentLength,
+    Host,
+    Referer,
+    UserAgent,
+    Other(String),
+}
+
+pub struct Response {
+    headers: HashMap<HeaderName, String>,
+    body: Vec<u8>,
+}

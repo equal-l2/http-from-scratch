@@ -1,3 +1,22 @@
+use std::error::Error;
+
+#[derive(Debug)]
+pub enum RequestHeaderParseError {
+    RequestLine(RequestLineParseError),
+    Header(HeaderParseError),
+}
+
+impl std::fmt::Display for RequestHeaderParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RequestLine(e) => write!(f, "failed to parse Request-Line: {}", e),
+            Self::Header(e) => write!(f, "failed to parse Header: {}", e),
+        }
+    }
+}
+
+impl Error for RequestHeaderParseError {}
+
 #[derive(Debug)]
 pub enum RequestLineParseError {
     Method,
@@ -15,20 +34,7 @@ impl std::fmt::Display for RequestLineParseError {
     }
 }
 
-#[derive(Debug)]
-pub enum RequestHeaderParseError {
-    RequestLine(RequestLineParseError),
-    Header(HeaderParseError),
-}
-
-impl std::fmt::Display for RequestHeaderParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::RequestLine(e) => write!(f, "failed to parse Request-Line: {}", e),
-            Self::Header(e) => write!(f, "failed to parse Header: {}", e),
-        }
-    }
-}
+impl Error for RequestLineParseError {}
 
 #[derive(Debug)]
 pub enum HeaderParseError {
@@ -47,6 +53,9 @@ impl std::fmt::Display for HeaderParseError {
     }
 }
 
+impl Error for HeaderParseError {}
+
+#[derive(Debug)]
 pub struct HeaderNameParseError;
 
 impl std::fmt::Display for HeaderNameParseError {
@@ -54,3 +63,5 @@ impl std::fmt::Display for HeaderNameParseError {
         write!(f, "contains non-tchar character")
     }
 }
+
+impl Error for HeaderNameParseError {}

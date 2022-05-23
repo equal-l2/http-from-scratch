@@ -3,34 +3,6 @@ use error::*;
 
 use crate::{types::*, utils};
 
-impl TryFrom<&[u8]> for Method {
-    type Error = ();
-    fn try_from(s: &[u8]) -> Result<Self, Self::Error> {
-        match s.to_ascii_lowercase().as_slice() {
-            b"get" => Ok(Method::Get),
-            b"head" => Ok(Method::Head),
-            b"post" => Ok(Method::Post),
-            _ => Err(()),
-        }
-    }
-}
-
-impl<'a> TryFrom<&'a [u8]> for RequestLine<'a> {
-    type Error = error::RequestLineParseError;
-    fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let mut fields = data.split(|&ch| ch == b' ');
-        let method_bytes = fields.next().ok_or(Self::Error::Method)?;
-        let method = method_bytes.try_into().map_err(|_| Self::Error::Method)?;
-        let path = fields.next().ok_or(Self::Error::Path)?;
-        let version = fields.next().ok_or(Self::Error::Version)?;
-        Ok(RequestLine {
-            method,
-            path: std::str::from_utf8(path).map_err(|_| Self::Error::Path)?,
-            version: std::str::from_utf8(version).map_err(|_| Self::Error::Version)?,
-        })
-    }
-}
-
 impl<'a> TryFrom<&'a [u8]> for RequestHeader<'a> {
     type Error = RequestHeaderParseError;
     fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
@@ -69,6 +41,53 @@ impl<'a> TryFrom<&'a [u8]> for RequestHeader<'a> {
     }
 }
 
+impl<'a> TryFrom<&'a [u8]> for RequestLine<'a> {
+    type Error = error::RequestLineParseError;
+    fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let mut fields = data.split(|&ch| ch == b' ');
+        let method_bytes = fields.next().ok_or(Self::Error::Method)?;
+        let method = method_bytes.try_into().map_err(|_| Self::Error::Method)?;
+        let path = fields.next().ok_or(Self::Error::Path)?;
+        let version = fields.next().ok_or(Self::Error::Version)?;
+        Ok(RequestLine {
+            method,
+            path: std::str::from_utf8(path).map_err(|_| Self::Error::Path)?,
+            version: std::str::from_utf8(version).map_err(|_| Self::Error::Version)?,
+        })
+    }
+}
+
+impl TryFrom<&[u8]> for Method {
+    type Error = ();
+    fn try_from(s: &[u8]) -> Result<Self, Self::Error> {
+        match s.to_ascii_lowercase().as_slice() {
+            b"get" => Ok(Method::Get),
+            b"head" => Ok(Method::Head),
+            b"post" => Ok(Method::Post),
+            _ => Err(()),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for Header<'a> {
+    type Error = HeaderParseError;
+    fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
+        let split = data.splitn(2, |v| v == &b':').collect::<Vec<_>>();
+        // assume name and value are valid UTF-8
+        match split.as_slice() {
+            [name_bytes, value_bytes] => {
+                let name = (*name_bytes)
+                    .try_into()
+                    .map_err(|_| HeaderParseError::InvalidName)?;
+                let value = std::str::from_utf8(value_bytes)
+                    .map_err(|_| HeaderParseError::InvalidUtf8Value)?;
+                Ok(Header(name, value))
+            }
+            _ => Err(HeaderParseError::NoSeparator),
+        }
+    }
+}
+
 impl TryFrom<&[u8]> for HeaderName {
     type Error = HeaderNameParseError;
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
@@ -91,24 +110,5 @@ impl TryFrom<&[u8]> for HeaderName {
                 }
             }
         })
-    }
-}
-
-impl<'a> TryFrom<&'a [u8]> for Header<'a> {
-    type Error = HeaderParseError;
-    fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
-        let split = data.splitn(2, |v| v == &b':').collect::<Vec<_>>();
-        // assume name and value are valid UTF-8
-        match split.as_slice() {
-            [name_bytes, value_bytes] => {
-                let name = (*name_bytes)
-                    .try_into()
-                    .map_err(|_| HeaderParseError::InvalidName)?;
-                let value = std::str::from_utf8(value_bytes)
-                    .map_err(|_| HeaderParseError::InvalidUtf8Value)?;
-                Ok(Header(name, value))
-            }
-            _ => Err(HeaderParseError::NoSeparator),
-        }
     }
 }
