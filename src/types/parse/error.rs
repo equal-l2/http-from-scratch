@@ -46,3 +46,11 @@ impl std::fmt::Display for HeaderParseError {
         }
     }
 }
+
+pub struct HeaderNameParseError;
+
+impl std::fmt::Display for HeaderNameParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "contains non-tchar character")
+    }
+}

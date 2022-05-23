@@ -1,7 +1,8 @@
 use std::io::{Read, Write};
 use std::net;
 
-mod parse;
+mod types;
+mod utils;
 
 fn handle_stream(stream: &mut net::TcpStream) -> Result<(), Box<dyn std::error::Error>> {
     let mut buf = [0u8; 1024];
@@ -10,8 +11,8 @@ fn handle_stream(stream: &mut net::TcpStream) -> Result<(), Box<dyn std::error::
         match stream.read(&mut buf[tail..]) {
             Ok(n) => {
                 tail = tail + n - 1;
-                if let Some(header_tail) = parse::utils::find_header_end(&buf[..=tail]) {
-                    let parsed: Result<parse::RequestHeader, _> =
+                if let Some(header_tail) = utils::find_header_end(&buf[..=tail]) {
+                    let parsed: Result<types::RequestHeader, _> =
                         buf[..=(header_tail - 2)].try_into();
                     match parsed {
                         Ok(header) => {

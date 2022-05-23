@@ -1,76 +1,7 @@
-use std::collections::HashMap;
-
-pub mod error;
+mod error;
 use error::*;
 
-pub mod utils;
-
-#[derive(Debug)]
-pub struct RequestHeader<'a> {
-    request_line: RequestLine<'a>,
-    headers: HashMap<HeaderName, &'a str>,
-}
-
-#[derive(Debug)]
-pub struct RequestLine<'a> {
-    method: Method,
-    path: &'a str,
-    version: &'a str,
-}
-
-#[derive(Debug)]
-enum Method {
-    Get,
-    Head,
-    Post,
-}
-
-#[derive(Debug, Hash, PartialEq, Eq)]
-enum HeaderName {
-    Accept,
-    Connection,
-    ContentLength,
-    Host,
-    Referer,
-    UserAgent,
-    Other(String),
-}
-
-pub struct HeaderNameParseError;
-
-impl std::fmt::Display for HeaderNameParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "contains non-tchar character")
-    }
-}
-
-#[derive(Debug)]
-pub struct Header<'a>(HeaderName, &'a str);
-
-impl TryFrom<&[u8]> for HeaderName {
-    type Error = HeaderNameParseError;
-    fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
-        let lower = data.to_ascii_lowercase();
-        Ok(match lower.as_slice() {
-            b"accept" => Self::Accept,
-            b"connection" => Self::Connection,
-            b"content-length" => Self::ContentLength,
-            b"host" => Self::Host,
-            b"referer" => Self::Referer,
-            b"user-agent" => Self::UserAgent,
-            _ => {
-                // check if data only contains tchars
-                if !utils::is_token(&lower) {
-                    return Err(HeaderNameParseError);
-                } else {
-                    // SAFETY: lower only contains tchar
-                    let s = unsafe { String::from_utf8_unchecked(lower) };
-                    Self::Other(s)
-                }
-            }
-        })
-    }
-}
+use crate::{types::*, utils};
 
 impl TryFrom<&[u8]> for Method {
     type Error = ();
@@ -89,9 +20,7 @@ impl<'a> TryFrom<&'a [u8]> for RequestLine<'a> {
     fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
         let mut fields = data.split(|&ch| ch == b' ');
         let method_bytes = fields.next().ok_or(Self::Error::Method)?;
-        let method = method_bytes
-            .try_into()
-            .map_err(|_| Self::Error::Method)?;
+        let method = method_bytes.try_into().map_err(|_| Self::Error::Method)?;
         let path = fields.next().ok_or(Self::Error::Path)?;
         let version = fields.next().ok_or(Self::Error::Version)?;
         Ok(RequestLine {
@@ -136,6 +65,31 @@ impl<'a> TryFrom<&'a [u8]> for RequestHeader<'a> {
         Ok(RequestHeader {
             request_line,
             headers,
+        })
+    }
+}
+
+impl TryFrom<&[u8]> for HeaderName {
+    type Error = HeaderNameParseError;
+    fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
+        let lower = data.to_ascii_lowercase();
+        Ok(match lower.as_slice() {
+            b"accept" => Self::Accept,
+            b"connection" => Self::Connection,
+            b"content-length" => Self::ContentLength,
+            b"host" => Self::Host,
+            b"referer" => Self::Referer,
+            b"user-agent" => Self::UserAgent,
+            _ => {
+                // check if data only contains tchars
+                if !utils::is_token(&lower) {
+                    return Err(HeaderNameParseError);
+                } else {
+                    // SAFETY: lower only contains tchar
+                    let s = unsafe { String::from_utf8_unchecked(lower) };
+                    Self::Other(s)
+                }
+            }
         })
     }
 }
