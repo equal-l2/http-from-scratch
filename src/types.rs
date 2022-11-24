@@ -4,19 +4,19 @@ mod parse;
 
 #[derive(Debug)]
 pub struct RequestHeader<'a> {
-    request_line: RequestLine<'a>,
-    headers: HashMap<HeaderName, &'a str>,
+    pub request_line: RequestLine<'a>,
+    pub headers: HashMap<HeaderName, &'a str>,
 }
 
 #[derive(Debug)]
 pub struct RequestLine<'a> {
-    method: Method,
-    path: &'a str,
-    version: &'a str,
+    pub method: Method,
+    pub path: &'a str,
+    pub version: &'a str,
 }
 
 #[derive(Debug)]
-enum Method {
+pub enum Method {
     Get,
     Head,
     Post,
@@ -26,7 +26,7 @@ enum Method {
 pub struct Header<'a>(HeaderName, &'a str);
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-enum HeaderName {
+pub enum HeaderName {
     Accept,
     Connection,
     ContentLength,

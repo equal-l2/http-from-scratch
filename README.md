@@ -13,3 +13,6 @@ Toy project to learn how to build server and learn about async ecosystem of Rust
     - [ ] Totally no idea after that, currently
 3. Make the runtime multi-threaded
     - [ ] Steal idea from tokio/async-std/actix?
+
+## Problem
+- Can't handle keep-alive yet (Modern browsers assume all server supports it :( )
